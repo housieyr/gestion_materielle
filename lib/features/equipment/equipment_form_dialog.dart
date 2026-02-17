@@ -91,6 +91,7 @@ Future<EquipmentFormResult?> showEquipmentFormDialog(
                             return TextFormField(
                               controller: controller,
                               focusNode: focusNode,
+                              onChanged: (value) => typeCtrl.text = value,
                               decoration: const InputDecoration(
                                 labelText: 'النوع (كاميرا/ميكروفون/...)',
                                 border: OutlineInputBorder(),
@@ -135,6 +136,7 @@ Future<EquipmentFormResult?> showEquipmentFormDialog(
                             return TextFormField(
                               controller: controller,
                               focusNode: focusNode,
+                              onChanged: (value) => typeCtrl.text = value,
                               decoration: const InputDecoration(
                                 labelText: 'الموديل',
                                 border: OutlineInputBorder(),
@@ -179,7 +181,7 @@ _field(serialCtrl, 'الرقم التسلسلي', requiredField: true),
                               (context, controller, focusNode, onFieldSubmitted) {
                             return TextFormField(
                               controller: controller,
-                              focusNode: focusNode,
+                              focusNode: focusNode, onChanged: (value) => deptCtrl.text = value,
                               decoration: const InputDecoration(
                                 labelText:'الإدارة المالكة',
                                 border: OutlineInputBorder(),
@@ -221,7 +223,7 @@ _field(serialCtrl, 'الرقم التسلسلي', requiredField: true),
                               (context, controller, focusNode, onFieldSubmitted) {
                             return TextFormField(
                               controller: controller,
-                              focusNode: focusNode,
+                              focusNode: focusNode,onChanged: (value) => officeCtrl.text = value,
                               decoration: const InputDecoration(
                                 labelText:'المكتب/الموقع',
                                 border: OutlineInputBorder(),
