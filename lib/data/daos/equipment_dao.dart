@@ -7,14 +7,14 @@ part 'equipment_dao.g.dart';
 class EquipmentFilter {
   final String? department;
   final String? office;
-  final String? type;
+  final String? type; final String? model;
   final EquipmentStatus? status;
   final String? search; // assetCode / serial / model
 
   const EquipmentFilter({
     this.department,
     this.office,
-    this.type,
+    this.type,this.model,
     this.status,
     this.search,
   });
@@ -55,6 +55,8 @@ class EquipmentDao extends DatabaseAccessor<AppDatabase>
     }
     if (filter.type != null && filter.type!.trim().isNotEmpty) {
       q.where((t) => t.type.equals(filter.type!.trim()));
+    } if (filter.model != null && filter.model!.trim().isNotEmpty) {
+      q.where((t) => t.model.equals(filter.model!.trim()));
     }
     if (filter.status != null) {
       q.where((t) => t.status.equals(filter.status!  .index));
@@ -72,7 +74,7 @@ class EquipmentDao extends DatabaseAccessor<AppDatabase>
   }
   Future<List<String>> getDistinctDepartmentsFiltered({
     String? office,
-    String? type,
+    String? type,String? model,
   }) async {
     final query = selectOnly(equipment, distinct: true)
       ..addColumns([equipment.department]);
@@ -83,14 +85,16 @@ class EquipmentDao extends DatabaseAccessor<AppDatabase>
     if (type != null) {
       query.where(equipment.type.equals(type));
     }
-
+ if (model != null) {
+      query.where(equipment.model.equals(model));
+    }
     final rows = await query.get();
     return rows.map((r) => r.read(equipment.department)!).toList();
   }
 
   Future<List<String>> getDistinctTypesFiltered({
     String? office,
-    String? department,
+    String? department,   String? model,
   }) async {
     final query = selectOnly(equipment, distinct: true)
       ..addColumns([equipment.type]);
@@ -101,14 +105,16 @@ class EquipmentDao extends DatabaseAccessor<AppDatabase>
     if (department != null) {
       query.where(equipment.department.equals(department));
     }
-
+  if (model != null) {
+      query.where(equipment.model.equals(model));
+    }
     final rows = await query.get();
     return rows.map((r) => r.read(equipment.type)!).toList();
   }
 
   Future<List<String>> getDistinctModelsFiltered({
     String? type,
-    String? department,
+    String? department,String? office,
   }) async {
     final query = selectOnly(equipment, distinct: true)
       ..addColumns([equipment.model]);
@@ -119,7 +125,9 @@ class EquipmentDao extends DatabaseAccessor<AppDatabase>
     if (department != null) {
       query.where(equipment.department.equals(department));
     }
-
+   if (office != null) {
+      query.where(equipment.office.equals(office));
+    }
     final rows = await query.get();
     return rows
         .map((r) => r.read(equipment.model)!)
@@ -129,7 +137,7 @@ class EquipmentDao extends DatabaseAccessor<AppDatabase>
 
   Future<List<String>> getDistinctOfficesFiltered({
     String? department,
-    String? type,
+    String? type, String? model,
   }) async {
     final query = selectOnly(equipment, distinct: true)
       ..addColumns([equipment.office]);
@@ -140,7 +148,9 @@ class EquipmentDao extends DatabaseAccessor<AppDatabase>
     if (type != null) {
       query.where(equipment.type.equals(type));
     }
-
+    if (model != null) {
+      query.where(equipment.model.equals(model));
+    }
     final rows = await query.get();
     return rows.map((r) => r.read(equipment.office)!).toList();
   }
@@ -211,6 +221,8 @@ class EquipmentDao extends DatabaseAccessor<AppDatabase>
     }
     if (filter.type != null && filter.type!.trim().isNotEmpty) {
       q.where(equipment.type.equals(filter.type!.trim()));
+    }    if (filter.model != null && filter.model!.trim().isNotEmpty) {
+      q.where(equipment.model.equals(filter.model!.trim()));
     }
     if (filter.status != null) {
       q.where(equipment.status.equals(filter.status! .index));
@@ -244,6 +256,8 @@ class EquipmentDao extends DatabaseAccessor<AppDatabase>
     }
     if (filter.type != null && filter.type!.trim().isNotEmpty) {
       q.where((t) => t.type.equals(filter.type!.trim()));
+    }if (filter.model != null && filter.model!.trim().isNotEmpty) {
+      q.where((t) => t.model.equals(filter.model!.trim()));
     }
     if (filter.status != null) {
       q.where((t) => t.status.equals(filter.status! .index));

@@ -29,10 +29,11 @@ class _EquipmentListPageState extends State<EquipmentListPage> {
   List<String> departments = [];
   List<String> types = [];
   List<String> offices = [];
-
+ List<String> models = [];
   String? selectedDepartment;
   String? selectedType;
   String? selectedOffice; // اختياري
+    String? selectedModel;
   EquipmentStatus? selectedStatus;
   late final EquipmentGridSource source;
   final searchCtrl = TextEditingController();
@@ -55,6 +56,7 @@ class _EquipmentListPageState extends State<EquipmentListPage> {
       department: selectedDepartment,
       type: selectedType,
       office: selectedOffice, // إذا لا تريده احذف هذا السطر والمتغير
+      model: selectedModel,
       status: selectedStatus,
       search: searchCtrl.text.trim().isEmpty ? null : searchCtrl.text.trim(),
     );
@@ -67,6 +69,7 @@ class _EquipmentListPageState extends State<EquipmentListPage> {
       selectedDepartment = null;
       selectedType = null;
       selectedOffice = null;
+        selectedModel = null;
       selectedStatus = null;
       searchCtrl.clear();
     });
@@ -79,18 +82,28 @@ class _EquipmentListPageState extends State<EquipmentListPage> {
         .getDistinctDepartmentsFiltered(
       office: selectedOffice,
       type: selectedType,
+         model: selectedModel,
     );
 
     types = await widget.db.equipmentDao
         .getDistinctTypesFiltered(
       office: selectedOffice,
       department: selectedDepartment,
+      model: selectedModel,
+    );
+
+    models = await widget.db.equipmentDao
+        .getDistinctModelsFiltered(
+      type: selectedType,
+      department: selectedDepartment,
+      office: selectedOffice,
     );
 
     offices = await widget.db.equipmentDao
         .getDistinctOfficesFiltered(
       department: selectedDepartment,
       type: selectedType,
+        model: selectedModel,
     );
 
     // ⛑ تصفير القيم غير المتوافقة
@@ -105,6 +118,9 @@ class _EquipmentListPageState extends State<EquipmentListPage> {
 
     if (selectedOffice != null && !offices.contains(selectedOffice)) {
       selectedOffice = null;
+    }
+if (selectedModel != null && !models.contains(selectedModel)) {
+      selectedModel = null;
     }
 
     if (mounted) setState(() {});
@@ -143,14 +159,17 @@ class _EquipmentListPageState extends State<EquipmentListPage> {
                   departments: departments,
                   types: types,
                   offices: offices,
+                  models: models,
                   selectedDepartment: selectedDepartment,
                   selectedType: selectedType,
-                  selectedOffice: selectedOffice,
+                  selectedOffice: selectedOffice, selectedModel: selectedModel,
                   selectedStatus: selectedStatus,
+                  
                   searchCtrl: searchCtrl,
                   onChangedDepartment: (v) async { setState(() => selectedDepartment = v); await refreshLookups(); await applyFilters(); },
                   onChangedType: (v) async { setState(() => selectedType = v); await refreshLookups(); await applyFilters(); },
                   onChangedOffice: (v) async { setState(() => selectedOffice = v); await refreshLookups(); await applyFilters(); },
+                   onChangedModel: (v) async { setState(() => selectedModel = v); await refreshLookups(); await applyFilters(); },
                   onChangedStatus: (v) async { setState(() => selectedStatus = v); await refreshLookups(); await applyFilters(); },
                   onApply: () async { await applyFilters(); if (context.mounted) Navigator.pop(context); },
                   onClear: () async { clearFilters(); if (context.mounted) Navigator.pop(context); },
@@ -220,14 +239,17 @@ class _EquipmentListPageState extends State<EquipmentListPage> {
                         departments: departments,
                         types: types,
                         offices: offices,
+                         models: models,
                         selectedDepartment: selectedDepartment,
                         selectedType: selectedType,
                         selectedOffice: selectedOffice,
+                        selectedModel: selectedModel,
                         selectedStatus: selectedStatus,
                         searchCtrl: searchCtrl,
                         onChangedDepartment: (v) async { setState(() => selectedDepartment = v); await refreshLookups();  await applyFilters(); },
                         onChangedType: (v) async { setState(() => selectedType = v); await refreshLookups();  await applyFilters(); },
                         onChangedOffice: (v) async { setState(() => selectedOffice = v); await refreshLookups();  await applyFilters(); },
+                        onChangedModel: (v) async { setState(() => selectedModel = v); await refreshLookups();  await applyFilters(); },
                         onChangedStatus: (v) async { setState(() => selectedStatus = v); await refreshLookups();  await applyFilters(); },
                         onApply: applyFilters,
                         onClear: clearFilters,
@@ -479,10 +501,11 @@ class _FiltersPanel extends StatelessWidget {
   final List<String> departments;
   final List<String> types;
   final List<String> offices;
-
+final List<String> models;
   final String? selectedDepartment;
   final String? selectedType;
   final String? selectedOffice;
+   final String? selectedModel;
   final EquipmentStatus? selectedStatus;
 
   final TextEditingController searchCtrl;
@@ -490,6 +513,7 @@ class _FiltersPanel extends StatelessWidget {
   final Future<void> Function(String?) onChangedDepartment;
   final Future<void> Function(String?) onChangedType;
   final Future<void> Function(String?) onChangedOffice;
+  final Future<void> Function(String?) onChangedModel;
   final Future<void> Function(EquipmentStatus?) onChangedStatus;
 
   final Future<void> Function() onApply;
@@ -499,14 +523,17 @@ class _FiltersPanel extends StatelessWidget {
     required this.departments,
     required this.types,
     required this.offices,
+    required this.models,
     required this.selectedDepartment,
     required this.selectedType,
     required this.selectedOffice,
+      required this.selectedModel,
     required this.selectedStatus,
     required this.searchCtrl,
     required this.onChangedDepartment,
     required this.onChangedType,
     required this.onChangedOffice,
+    required this.onChangedModel,
     required this.onChangedStatus,
     required this.onApply,
     required this.onClear,
@@ -557,7 +584,8 @@ class _FiltersPanel extends StatelessWidget {
         const SizedBox(height: 12),
         ddString(label: 'المكتب', value: selectedOffice, items: offices, onChanged: onChangedOffice),
         const SizedBox(height: 12),
-
+ddString(label: 'الموديل', value: selectedModel, items: models, onChanged: onChangedModel),
+        const SizedBox(height: 12),
         DropdownButtonFormField<EquipmentStatus?>(
           isExpanded: true,
           value: selectedStatus,
