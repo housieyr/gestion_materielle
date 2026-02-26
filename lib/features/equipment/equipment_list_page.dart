@@ -116,7 +116,7 @@ class _EquipmentListPageState extends State<EquipmentListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('كل المعدات'),
+        title: Center(child: const Text('معدات الإعلامية')),
         actions: [IconButton(
           tooltip: 'الفلاتر',
           icon: Icon(_filtersOpen ? Icons.filter_alt_off : Icons.filter_alt),

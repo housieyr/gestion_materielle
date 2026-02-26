@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:excel/excel.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../app_database.dart';
 import '../tables.dart';
@@ -72,30 +71,11 @@ class EquipmentExcelImporter {
       return (row[i]?.value?.toString() ?? '').trim();
     }
 
-    Future<File> backupDatabaseFile() async {
-      final dir = await getApplicationSupportDirectory();
 
-      // ⚠️ نفس اسم ملف DB الموجود في app_database.dart
-      final dbFile = File('${dir.path}/media_stock.sqlite');
-
-      if (!await dbFile.exists()) {
-        throw Exception('قاعدة البيانات غير موجودة');
-      }
-
-      final timestamp = DateTime.now()
-          .toIso8601String()
-          .replaceAll(':', '-')
-          .replaceAll('.', '-');
-
-      final backupFile =
-      File('${dir.path}/backup_media_stock_$timestamp.sqlite');
-
-      return dbFile.copy(backupFile.path);
-    }
     int inserted = 0;
     int skipped = 0;
 
-    // We rely on the UNIQUE constraint (assetCode) to skip duplicates.
+
     await db.transaction(() async {
       for (int r = 1; r < sheet.rows.length; r++) {
         final row = sheet.rows[r];
@@ -120,28 +100,47 @@ class EquipmentExcelImporter {
         final notes = _parseStatus(notesOrStatus) == null && notesOrStatus.isNotEmpty
             ? notesOrStatus
             : null;
-        await db.transaction(() async {
+
 
         try {
-          await db.equipmentDao.addEquipment(
-            EquipmentCompanion.insert(
-              assetCode: assetCode,
-              type: type,
-              model: model,
-              serial: serial,
-              department: department,
-              office: office,
-              status: status,
-              notes: Value(notes),
-            ),
-          );
+          final existing = await (db.select(db.equipment)
+            ..where((t) => t.assetCode.equals(assetCode)))
+              .getSingleOrNull();
+
+          if (existing == null) {
+            await db.equipmentDao.addEquipment(
+              EquipmentCompanion.insert(
+                assetCode: assetCode,
+                type: type,
+                model: model,
+                serial: serial,
+                department: department,
+                office: office,
+                status: status,
+                notes: Value(notes),
+              ),
+            );
+          } else {
+            await db.equipmentDao.updateEquipmentRow(
+              existing.copyWith(
+                assetCode: assetCode,
+                type: type,
+                model: model,
+                serial: serial,
+                department: department,
+                office: office,
+                status: status,
+                notes: Value(notes),
+              ),
+            );
+          }
           inserted++;
         } catch (_) {
           // Likely duplicate key or validation issue.
           skipped++;
         }
-      }    );
-    }});
+      }
+    } );
 
     return (inserted, skipped);
   }
