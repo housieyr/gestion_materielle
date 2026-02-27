@@ -1,7 +1,7 @@
 
 import 'dart:io';
 
-import 'package:responsive_sizer/responsive_sizer.dart';
+ 
 
 import '../../data/db_backup.dart';
 import '../../data/tables.dart';
@@ -231,9 +231,9 @@ if (selectedModel != null && !models.contains(selectedModel)) {
             children: [
               if (wide && _filtersOpen)
                 Align(alignment: Alignment.topCenter,
-                  child: Card(color: Colors.white,elevation: 5, margin:    EdgeInsets.only(top:2.h,right:1.w   ),
-                    child: Container(    padding:   EdgeInsets.all(12),
-                      width: 20.w,
+                 child: Card(color: Colors.white,elevation: 5, margin: const EdgeInsets.only(top: 16, right: 12),
+                  child: Container(    padding:   EdgeInsets.all(12),
+                      width: 320,
 
                       child: _FiltersPanel(
                         departments: departments,
@@ -429,7 +429,7 @@ if (selectedModel != null && !models.contains(selectedModel)) {
                     Expanded(
                       child: Padding(
 
-                        padding: EdgeInsets.symmetric(horizontal: 3.w,vertical: 3.h),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                         child: SfDataGrid(columnWidthMode: ColumnWidthMode.fill,
 
                           gridLinesVisibility: GridLinesVisibility.both, // الصفوف + الأعمدة
@@ -605,7 +605,7 @@ ddString(label: 'الموديل', value: selectedModel, items: models, onChanged
           children: [
            Expanded(
   child: Container(
-    height:5.h,
+    height: 44,
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(45),
       gradient: const LinearGradient(
@@ -639,7 +639,7 @@ ddString(label: 'الموديل', value: selectedModel, items: models, onChanged
             const SizedBox(width: 12),
             Expanded(
             child: SizedBox(
-    height: 5.h,
+  height: 44,
                 child: OutlinedButton(    style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         shadowColor: Colors.transparent,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:responsive_sizer/responsive_sizer.dart';import '../../data/app_database.dart';
+import '../../data/app_database.dart';
+ 
 
 import '../../data/tables.dart';
 
@@ -62,7 +63,7 @@ Future<EquipmentFormResult?> showEquipmentFormDialog(
             child: SingleChildScrollView(
               child: Wrap(
                 spacing: 12,
-                runSpacing: 2.h,
+                runSpacing:12,
                 children: [
                   _field(assetCtrl, 'Asset Code (رقم الجرد)', requiredField: !isEdit, enabled: !isEdit),
 
@@ -245,7 +246,7 @@ _field(serialCtrl, 'الرقم التسلسلي', requiredField: true),
                     width: 660,
                     child: TextFormField(
                       controller: notesCtrl,
-                      decoration:   InputDecoration(floatingLabelAlignment: FloatingLabelAlignment.center, labelStyle: TextStyle(fontSize: 2.h),
+                    decoration:   InputDecoration(floatingLabelAlignment: FloatingLabelAlignment.center, labelStyle: const TextStyle(fontSize: 14),
                         labelText: 'ملاحظات',
                         border: OutlineInputBorder(),
                       ),
@@ -300,7 +301,7 @@ Widget _field(
       controller: c,
       enabled: enabled,
       decoration: InputDecoration(  floatingLabelAlignment: FloatingLabelAlignment.center,
-        labelText: label,labelStyle: TextStyle(fontSize: 2.h),
+       labelText: label,labelStyle: const TextStyle(fontSize: 14),
         border: const OutlineInputBorder(),
       ),
       validator: (v) {
