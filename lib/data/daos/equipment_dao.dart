@@ -238,6 +238,58 @@ class EquipmentDao extends DatabaseAccessor<AppDatabase>
     return row.read(equipment.id.count()) ?? 0;
   }
 
+  Future<List<EquipmentData>> fetchEquipmentForPrint({
+    required EquipmentFilter filter,
+    String sortColumn = 'id',
+    bool sortAsc = false,
+  }) async {
+    final q = select(equipment);
+
+    if (filter.department != null && filter.department!.trim().isNotEmpty) {
+      q.where((t) => t.department.equals(filter.department!.trim()));
+    }
+    if (filter.office != null && filter.office!.trim().isNotEmpty) {
+      q.where((t) => t.office.equals(filter.office!.trim()));
+    }
+    if (filter.type != null && filter.type!.trim().isNotEmpty) {
+      q.where((t) => t.type.equals(filter.type!.trim()));
+    }
+    if (filter.model != null && filter.model!.trim().isNotEmpty) {
+      q.where((t) => t.model.equals(filter.model!.trim()));
+    }
+    if (filter.status != null) {
+      q.where((t) => t.status.equals(filter.status!.index));
+    }
+    if (filter.search != null && filter.search!.trim().isNotEmpty) {
+      final s = '%${filter.search!.trim()}%';
+      q.where((t) => t.assetCode.like(s) | t.serial.like(s) | t.model.like(s));
+    }
+
+    OrderingTerm order;
+    switch (sortColumn) {
+      case 'assetCode':
+        order = OrderingTerm(expression: equipment.assetCode, mode: sortAsc ? OrderingMode.asc : OrderingMode.desc);
+        break;
+      case 'type':
+        order = OrderingTerm(expression: equipment.type, mode: sortAsc ? OrderingMode.asc : OrderingMode.desc);
+        break;
+      case 'department':
+        order = OrderingTerm(expression: equipment.department, mode: sortAsc ? OrderingMode.asc : OrderingMode.desc);
+        break;
+      case 'office':
+        order = OrderingTerm(expression: equipment.office, mode: sortAsc ? OrderingMode.asc : OrderingMode.desc);
+        break;
+      case 'status':
+        order = OrderingTerm(expression: equipment.status, mode: sortAsc ? OrderingMode.asc : OrderingMode.desc);
+        break;
+      default:
+        order = OrderingTerm(expression: equipment.id, mode: sortAsc ? OrderingMode.asc : OrderingMode.desc);
+    }
+
+    q.orderBy([(_) => order]);
+    return q.get();
+  }
+
   Future<List<EquipmentData>> fetchEquipmentPage({
     required EquipmentFilter filter,
     required int pageIndex,

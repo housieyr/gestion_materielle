@@ -53,6 +53,8 @@ dependencies:
   dropdown_search: ^6.0.2
   responsive_sizer: ^3.3.1
   window_manager: ^0.5.1
+  pdf: ^3.11.3
+  printing: ^5.14.2
 
 dev_dependencies:
   flutter_test:

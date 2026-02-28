@@ -16,7 +16,9 @@ import '../../data/daos/equipment_dao.dart';
 import 'equipment_grid_source.dart';
 import 'equipment_history_dialog.dart';
 import '../../data/excel/equipment_excel_importer.dart';
-
+ 
+import 'equipment_print_preview_page.dart';
+import 'lib/features/equipment/equipment_print_service.dart';
 class EquipmentListPage extends StatefulWidget {
   final AppDatabase db;
   const EquipmentListPage({super.key, required this.db});
@@ -395,7 +397,40 @@ if (selectedModel != null && !models.contains(selectedModel)) {
                               icon: const Icon(Icons.history),
                               label: const Text('السجل'),
                             ),
+   OutlinedButton.icon(
+                              onPressed: () async {
+                                final total = await widget.db.equipmentDao.countEquipment(source.filter);
+                                if (total == 0) {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('لا توجد بيانات للطباعة')),
+                                  );
+                                  return;
+                                }
 
+                                try {
+                                  final rows = await widget.db.equipmentDao.fetchEquipmentForPrint(
+                                    filter: source.filter,
+                                    sortColumn: source.sortColumn,
+                                    sortAsc: source.sortAsc,
+                                  );
+
+                                  if (!mounted) return;
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => EquipmentPrintPreviewPage(rows: rows),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('تعذر بدء الطباعة: $e')),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.print),
+                              label: const Text('طباعة الجدول'),
+                            ),
                             const SizedBox(width: 16),
 
                             // عدد الصفوف
