@@ -8,22 +8,21 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
  
-
-class EquipmentPrintOptions {
+ class EquipmentPrintOptions {
   final bool isLandscape;
   final String title;
   final bool showPrintedAt;
-  final bool colorStatusColumn;
-  final int rowsPerPage;
-  final double tableScale;
+  final bool colorStatusColumn;  final double rowScale;
+  final int? expandedColumnIndex;
+  final double expandedColumnScale;
 
   const EquipmentPrintOptions({
     required this.isLandscape,
     required this.title,
     this.showPrintedAt = true,
-    this.colorStatusColumn = true,
-    this.rowsPerPage = 22,
-    this.tableScale = 1,
+    this.colorStatusColumn = true, this.rowScale = 1,
+    this.expandedColumnIndex,
+    this.expandedColumnScale = 1,
   });
 
   PdfPageFormat get pageFormat =>
@@ -38,33 +37,21 @@ class EquipmentPrintService {
     final doc = pw.Document();
 
     final regularFont = await PdfGoogleFonts.notoNaskhArabicRegular();
-    final boldFont = await PdfGoogleFonts.notoNaskhArabicBold();
-
-    final safeRowsPerPage = math.max(5, options.rowsPerPage);
-    final chunks = _chunkRows(rows, safeRowsPerPage);
-    final totalPages = math.max(1, chunks.length);
-
-    final titleStyle = pw.TextStyle(
-      font: boldFont,
-      fontSize: 13 * options.tableScale,
+    final boldFont = await PdfGoogleFonts.notoNaskhArabicBold();   final titleStyle = pw.TextStyle(
+      font: boldFont,  fontSize: 13,
       fontWeight: pw.FontWeight.bold,
     );
     final metaStyle = pw.TextStyle(
-      font: regularFont,
-      fontSize: 10 * options.tableScale,
+      font: regularFont,  fontSize: 10,
     );
     final headerStyle = pw.TextStyle(
-      font: boldFont,
-      fontSize: 9.5 * options.tableScale,
+      font: boldFont, fontSize: 9.5,
       fontWeight: pw.FontWeight.bold,
     );
     final cellStyle = pw.TextStyle(
-      font: regularFont,
-      fontSize: 8.5 * options.tableScale,
-    );
-    final cellPadding = 4.5 * options.tableScale;
-
-    if (chunks.isEmpty) {
+      font: regularFont,  fontSize: 8.5,
+    );  final horizontalPadding = 3.5;
+    final verticalPadding = 3.0 * options.rowScale; if (rows.isEmpty) {
       doc.addPage(
         pw.Page(
           pageFormat: options.pageFormat,
@@ -78,53 +65,46 @@ class EquipmentPrintService {
         ),
       );
       return doc.save();
-    }
-
-    for (var i = 0; i < chunks.length; i++) {
-      final pageRows = chunks[i];
-      final pageNo = i + 1;
-
-      doc.addPage(
-        pw.Page(
-          pageFormat: options.pageFormat,
-          margin: const pw.EdgeInsets.all(20),
-          build: (_) {
-            return pw.Directionality(
-              textDirection: pw.TextDirection.rtl,
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(options.title, style: titleStyle),
-                  pw.SizedBox(height: 4),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text('الصفحة: $pageNo / $totalPages', style: metaStyle),
-                      pw.Text('عدد السجلات: ${rows.length}', style: metaStyle),
-                    ],
-                  ),
-                  if (options.showPrintedAt) ...[
-                    pw.SizedBox(height: 2),
-                    pw.Text(
-                      'تاريخ الطباعة: ${DateTime.now().toLocal()}',
-                      style: metaStyle,
-                    ),
-                  ],
-                  pw.SizedBox(height: 10),
-                  _buildTable(
-                    rows: pageRows,
-                    headerStyle: headerStyle,
-                    cellStyle: cellStyle,
-                    cellPadding: cellPadding,
-                    colorStatusColumn: options.colorStatusColumn,
-                  ),
-                ],
-              ),
-            );
-          },
+    } doc.addPage(
+      pw.MultiPage(
+        pageFormat: options.pageFormat,
+        margin: const pw.EdgeInsets.all(20),
+        textDirection: pw.TextDirection.rtl,
+        header: (_) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(options.title, style: titleStyle),
+            pw.SizedBox(height: 4),
+            pw.Text('عدد السجلات: ${rows.length}', style: metaStyle),
+            if (options.showPrintedAt) ...[
+              pw.SizedBox(height: 2),
+              pw.Text(
+                'تاريخ الطباعة: ${DateTime.now().toLocal()}',
+                style: metaStyle,
+              ),],
+            pw.SizedBox(height: 10),
+          ],
+        ), footer: (context) => pw.Align(
+          alignment: pw.Alignment.centerLeft,
+          child: pw.Text(
+            'الصفحة: ${context.pageNumber} / ${context.pagesCount}',
+            style: metaStyle,
+          ),
         ),
-      );
-    }
+        build: (_) => [
+          _buildTable(
+            rows: rows,
+            headerStyle: headerStyle,
+            cellStyle: cellStyle,
+            horizontalPadding: horizontalPadding,
+            verticalPadding: verticalPadding,
+            colorStatusColumn: options.colorStatusColumn,
+            expandedColumnIndex: options.expandedColumnIndex,
+            expandedColumnScale: options.expandedColumnScale,
+          ),
+        ],
+      ),
+    );
 
     return doc.save();
   }
@@ -132,23 +112,30 @@ class EquipmentPrintService {
   static pw.Widget _buildTable({
     required List<EquipmentData> rows,
     required pw.TextStyle headerStyle,
-    required pw.TextStyle cellStyle,
-    required double cellPadding,
+    required pw.TextStyle cellStyle,  required double horizontalPadding,
+    required double verticalPadding,
     required bool colorStatusColumn,
+    required int? expandedColumnIndex,
+    required double expandedColumnScale,
   }) {
     final headerBg = PdfColors.grey300;
 
     final tableRows = <pw.TableRow>[
       pw.TableRow(
+        repeat: true,
         decoration: pw.BoxDecoration(color: headerBg),
-        children: [
-          _headerCell('الحالة', headerStyle, cellPadding),
-          _headerCell('المكتب', headerStyle, cellPadding),
-          _headerCell('الإدارة', headerStyle, cellPadding),
-          _headerCell('الرقم التسلسلي', headerStyle, cellPadding),
-          _headerCell('الموديل', headerStyle, cellPadding),
-          _headerCell('النوع', headerStyle, cellPadding),
-          _headerCell('رقم الجرد', headerStyle, cellPadding),
+        children: [    _headerCell('الحالة', headerStyle, horizontalPadding, verticalPadding),
+          _headerCell('المكتب', headerStyle, horizontalPadding, verticalPadding),
+          _headerCell('الإدارة', headerStyle, horizontalPadding, verticalPadding),
+          _headerCell(
+            'الرقم التسلسلي',
+            headerStyle,
+            horizontalPadding,
+            verticalPadding,
+          ),
+          _headerCell('الموديل', headerStyle, horizontalPadding, verticalPadding),
+          _headerCell('النوع', headerStyle, horizontalPadding, verticalPadding),
+          _headerCell('رقم الجرد', headerStyle, horizontalPadding, verticalPadding),
         ],
       ),
     ];
@@ -160,39 +147,45 @@ class EquipmentPrintService {
           children: [
             _dataCell(
               _statusLabel(e.status),
-              cellStyle,
-              cellPadding,
+              cellStyle, horizontalPadding,
+              verticalPadding,
               bg: colorStatusColumn ? statusColor : null,
-            ),
-            _dataCell(e.office, cellStyle, cellPadding),
-            _dataCell(e.department, cellStyle, cellPadding),
-            _dataCell(e.serial, cellStyle, cellPadding),
-            _dataCell(e.model, cellStyle, cellPadding),
-            _dataCell(e.type, cellStyle, cellPadding),
-            _dataCell(e.assetCode, cellStyle, cellPadding),
+            ), _dataCell(e.office, cellStyle, horizontalPadding, verticalPadding),
+            _dataCell(e.department, cellStyle, horizontalPadding, verticalPadding),
+            _dataCell(e.serial, cellStyle, horizontalPadding, verticalPadding),
+            _dataCell(e.model, cellStyle, horizontalPadding, verticalPadding),
+            _dataCell(e.type, cellStyle, horizontalPadding, verticalPadding),
+            _dataCell(e.assetCode, cellStyle, horizontalPadding, verticalPadding),
           ],
         ),
       );
     }
 
+    const compactColumnWidth = 0.9;
+    final selectedScale = expandedColumnScale.clamp(0.7, 2.6);
+    final columnWidths = <int, pw.TableColumnWidth>{
+      for (var i = 0; i < 7; i++)
+        i: pw.FlexColumnWidth(
+          i == expandedColumnIndex
+              ? compactColumnWidth * selectedScale
+              : compactColumnWidth,
+        ),
+    };
+
     return pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.grey500, width: 0.5),
-      columnWidths: {
-        0: const pw.FlexColumnWidth(1.5),
-        1: const pw.FlexColumnWidth(1.4),
-        2: const pw.FlexColumnWidth(1.6),
-        3: const pw.FlexColumnWidth(1.8),
-        4: const pw.FlexColumnWidth(1.6),
-        5: const pw.FlexColumnWidth(1.5),
-        6: const pw.FlexColumnWidth(1.2),
-      },
+      border: pw.TableBorder.all(color: PdfColors.grey500, width: 0.5), columnWidths: columnWidths,
       children: tableRows,
     );
-  }
-
-  static pw.Widget _headerCell(String text, pw.TextStyle style, double padding) {
-    return pw.Padding(
-      padding: pw.EdgeInsets.all(padding),
+  } static pw.Widget _headerCell(
+    String text,
+    pw.TextStyle style,
+    double horizontalPadding,
+    double verticalPadding,
+  ) {
+    return pw.Padding( padding: pw.EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       child: pw.Text(
         text,
         textAlign: pw.TextAlign.center,
@@ -203,32 +196,22 @@ class EquipmentPrintService {
 
   static pw.Widget _dataCell(
     String text,
-    pw.TextStyle style,
-    double padding, {
+    pw.TextStyle style,double horizontalPadding,
+    double verticalPadding, {
     PdfColor? bg,
   }) {
     return pw.Container(
-      color: bg,
-      padding: pw.EdgeInsets.all(padding),
+      color: bg, padding: pw.EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       child: pw.Text(
         text,
         textAlign: pw.TextAlign.center,
         style: style,
       ),
     );
-  }
-
-  static List<List<EquipmentData>> _chunkRows(List<EquipmentData> rows, int size) {
-    if (rows.isEmpty) return const [];
-    final out = <List<EquipmentData>>[];
-    for (var i = 0; i < rows.length; i += size) {
-      final end = math.min(i + size, rows.length);
-      out.add(rows.sublist(i, end));
-    }
-    return out;
-  }
-
-  static PdfColor _statusColor(EquipmentStatus status) {
+  }static PdfColor _statusColor(EquipmentStatus status) {
     switch (status) {
       case EquipmentStatus.working:
         return PdfColor.fromHex('#DFF4E5');

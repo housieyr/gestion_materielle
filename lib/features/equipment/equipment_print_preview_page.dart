@@ -1,17 +1,9 @@
-import 'dart:math' as math;
-import 'dart:typed_data';
-
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
-
-import '../../data/app_database.dart';
-import '../../data/tables.dart';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
-import '../../data/tables.dart';
-import 'lib/features/equipment/equipment_print_service.dart'; 
+import '../../data/app_database.dart';
+ 
+import 'lib/features/equipment/equipment_print_service.dart';
 
 class EquipmentPrintPreviewPage extends StatefulWidget {
   final List<EquipmentData> rows;
@@ -26,9 +18,19 @@ class EquipmentPrintPreviewPage extends StatefulWidget {
 class _EquipmentPrintPreviewPageState extends State<EquipmentPrintPreviewPage> {
   bool _isLandscape = true;
   bool _showPrintedAt = true;
-  bool _colorStatusColumn = true;
-  int _rowsPerPage = 22;
-  double _tableScale = 1;
+  bool _colorStatusColumn = true;double _rowScale = 1;
+  int? _expandedColumnIndex;
+  double _expandedColumnScale = 1.3;
+
+  static const List<String> _columnTitles = [
+    'الحالة',
+    'المكتب',
+    'الإدارة',
+    'الرقم التسلسلي',
+    'الموديل',
+    'النوع',
+    'رقم الجرد',
+  ];
 
   final TextEditingController _titleCtrl =
       TextEditingController(text: 'تقرير المعدات');
@@ -43,9 +45,9 @@ class _EquipmentPrintPreviewPageState extends State<EquipmentPrintPreviewPage> {
     isLandscape: _isLandscape,
     title: _titleCtrl.text.trim().isEmpty ? 'تقرير المعدات' : _titleCtrl.text,
     showPrintedAt: _showPrintedAt,
-    colorStatusColumn: _colorStatusColumn,
-    rowsPerPage: _rowsPerPage,
-    tableScale: _tableScale,
+    colorStatusColumn: _colorStatusColumn, rowScale: _rowScale,
+    expandedColumnIndex: _expandedColumnIndex,
+    expandedColumnScale: _expandedColumnScale,
   );
 
   @override
@@ -94,36 +96,58 @@ class _EquipmentPrintPreviewPageState extends State<EquipmentPrintPreviewPage> {
                       },
                     ),
                   ),
-                  SizedBox(
-                    width: 220,
-                    child: DropdownButtonFormField<int>(
-                      value: _rowsPerPage,
-                      decoration: const InputDecoration(
-                        labelText: 'سجلات لكل صفحة',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [10, 14, 18, 22, 26, 30, 34]
-                          .map((n) => DropdownMenuItem(value: n, child: Text('$n')))
-                          .toList(),
-                      onChanged: (v) {
-                        if (v == null) return;
-                        setState(() => _rowsPerPage = v);
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    width: 340,
+                  SizedBox(   width: 320,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('حجم الجدول: ${_tableScale.toStringAsFixed(2)}x'),
+                        Text('تكبير ارتفاع السطر: ${_rowScale.toStringAsFixed(2)}x'),
                         Slider(
-                          value: _tableScale,
-                          min: 0.75,
-                          max: 1.40,
-                          divisions: 13,
-                          label: _tableScale.toStringAsFixed(2),
-                          onChanged: (v) => setState(() => _tableScale = v),
+                          value: _rowScale,
+                          min: 0.85,
+                          max: 1.9,
+                          divisions: 21,
+                          label: _rowScale.toStringAsFixed(2),
+                          onChanged: (v) => setState(() => _rowScale = v),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: 240,
+                    child: DropdownButtonFormField<int?>(
+                      value: _expandedColumnIndex,
+                      decoration: const InputDecoration(  labelText: 'تكبير عمود محدد',
+                        border: OutlineInputBorder(),
+                      ),items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text('بدون (كل الأعمدة صغيرة)'),
+                        ),
+                        ...List.generate(
+                          _columnTitles.length,
+                          (i) => DropdownMenuItem<int?>(
+                            value: i,
+                            child: Text(_columnTitles[i]),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) => setState(() => _expandedColumnIndex = v),
+                    ),
+                  ),
+                  SizedBox( width: 320,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [  Text(
+                          'نسبة تكبير العمود المحدد: ${_expandedColumnScale.toStringAsFixed(2)}x',
+                        ),
+                        Slider(    value: _expandedColumnScale,
+                          min: 0.7,
+                          max: 2.6,
+                          divisions: 19,
+                          label: _expandedColumnScale.toStringAsFixed(2),
+                          onChanged: _expandedColumnIndex == null
+                              ? null
+                              : (v) => setState(() => _expandedColumnScale = v),
                         ),
                       ],
                     ),
@@ -168,5 +192,4 @@ class _EquipmentPrintPreviewPageState extends State<EquipmentPrintPreviewPage> {
         ],
       ),
     );
-  }
-}
+  }}
